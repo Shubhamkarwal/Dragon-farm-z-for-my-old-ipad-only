@@ -1,221 +1,247 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black"/>
   <meta name="apple-mobile-web-app-title" content="Dragon Farm Z"/>
-  <meta name="mobile-web-app-capable" content="yes"/>
-  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
   <title>Dragon Farm Z</title>
-  <link rel="stylesheet" href="style.css"/>
   <style>
-    /* Critical fallback styles inline so they always load */
-    *{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;}
-    body{margin:0;padding:0;background:#000;overflow:hidden;}
-    canvas{display:block;}
-    /* Prevent iOS bounce scroll */
-    html,body{position:fixed;width:100%;height:100%;overflow:hidden;}
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html,body { background:#000; overflow:hidden; position:fixed; width:100%; height:100%; }
+    canvas { display:block; }
+    #ui { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:10; font-family:Arial,sans-serif; }
+    #topbar { pointer-events:all; background:rgba(0,0,0,0.85); border-bottom:2px solid #FF6B00;
+      display:-webkit-flex; display:flex; -webkit-justify-content:space-between; justify-content:space-between;
+      -webkit-align-items:center; align-items:center; padding:6px 12px; color:#FFD700; font-size:11px; font-weight:bold; }
+    #kibar-wrap { position:absolute; top:38px; left:8px; display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; gap:5px; }
+    #kibar-bg { width:110px; height:9px; background:#222; border:1px solid #00BFFF; border-radius:4px; overflow:hidden; }
+    #kibar { height:100%; width:100%; background:#00BFFF; border-radius:4px; -webkit-transition:width 0.3s; transition:width 0.3s; }
+    #kilabel { font-size:9px; color:#00BFFF; font-weight:bold; }
+    #plwrap { position:absolute; top:38px; right:8px; font-size:9px; color:#FFD700; font-weight:bold; }
+    #toolbar { pointer-events:all; position:fixed; bottom:130px; left:50%; -webkit-transform:translateX(-50%); transform:translateX(-50%);
+      display:-webkit-flex; display:flex; gap:5px; }
+    .tbtn { background:rgba(0,0,0,0.85); border:2px solid #444; border-radius:8px; padding:7px 5px 4px;
+      font-size:18px; color:#fff; cursor:pointer; min-width:46px; text-align:center; pointer-events:all; display:block; }
+    .tbtn span { display:block; font-size:8px; color:#aaa; margin-top:2px; }
+    .tbtn.active { border-color:#FF6B00; background:rgba(255,107,0,0.2); }
+    .tbtn.active span { color:#FFD700; }
+    #seedbar { position:fixed; bottom:185px; left:50%; -webkit-transform:translateX(-50%); transform:translateX(-50%);
+      background:rgba(0,0,0,0.85); border:1px solid #FFD700; border-radius:8px; padding:5px 8px;
+      display:-webkit-flex; display:flex; gap:4px; pointer-events:all; -webkit-align-items:center; align-items:center; }
+    #seedlabel { font-size:8px; color:#FFD700; margin-right:4px; }
+    .sopt { font-size:16px; cursor:pointer; padding:3px; border-radius:5px; border:2px solid transparent; position:relative; }
+    .sopt.active { border-color:#FF6B00; background:rgba(255,107,0,0.2); }
+    .sopt .sc { position:absolute; bottom:-1px; right:-1px; background:#111; border-radius:2px; font-size:8px; color:#FFD700; padding:1px 2px; }
+    #msgbox { pointer-events:none; position:fixed; bottom:225px; left:50%; -webkit-transform:translateX(-50%); transform:translateX(-50%);
+      background:rgba(0,0,0,0.92); border:2px solid #FF6B00; border-radius:8px; padding:8px 18px;
+      font-size:10px; color:#FFD700; text-align:center; z-index:50; display:none; max-width:90%; }
+    #dialogue { pointer-events:all; position:fixed; bottom:200px; left:50%; -webkit-transform:translateX(-50%); transform:translateX(-50%);
+      width:320px; max-width:94vw; background:rgba(0,0,0,0.95); border:2px solid #FFD700; border-radius:10px;
+      padding:14px; display:none; z-index:60; }
+    #dlg-portrait { font-size:32px; float:left; margin-right:10px; }
+    #dlg-text { font-size:10px; color:#eee; line-height:1.6; overflow:hidden; }
+    #dlg-ok { pointer-events:all; margin-top:10px; background:#FF6B00; border:none; color:#000;
+      font-size:10px; font-weight:bold; padding:6px 14px; border-radius:5px; cursor:pointer; float:right; }
+    #shopmodal,#trademodal,#cheatmodal { pointer-events:all; position:fixed; inset:0; top:0; left:0; right:0; bottom:0;
+      background:rgba(0,0,0,0.88); display:none; -webkit-align-items:center; align-items:center;
+      -webkit-justify-content:center; justify-content:center; z-index:100; -webkit-display:none; }
+    #shopmodal.open,#trademodal.open,#cheatmodal.open { display:-webkit-flex; display:flex; }
+    .modal-inner { background:#0a0a22; border:2px solid #FFD700; border-radius:12px; width:320px;
+      max-width:95vw; max-height:85vh; overflow-y:auto; padding:14px; -webkit-overflow-scrolling:touch; }
+    .modal-title { font-size:13px; color:#FFD700; margin-bottom:10px; border-bottom:1px solid #333; padding-bottom:8px; font-weight:bold; }
+    .mclose { float:right; background:none; border:1px solid #555; color:#aaa; font-size:13px; cursor:pointer; border-radius:5px; padding:2px 8px; }
+    .shop-item { display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center;
+      gap:8px; background:rgba(255,255,255,0.05); border:1px solid #333; border-radius:8px; padding:8px; margin-bottom:6px; }
+    .si-icon { font-size:22px; }
+    .si-info { -webkit-flex:1; flex:1; }
+    .si-name { font-size:9px; color:#eee; font-weight:bold; }
+    .si-desc { font-size:8px; color:#888; margin-top:2px; }
+    .si-cost { font-size:9px; color:#FFD700; margin-right:6px; }
+    .sbtn { background:#FF6B00; border:none; color:#000; font-size:9px; font-weight:bold;
+      padding:5px 9px; border-radius:5px; cursor:pointer; }
+    .sbtn.sell { background:#39FF14; }
+    .stabs { display:-webkit-flex; display:flex; gap:5px; margin-bottom:8px; }
+    .stab { -webkit-flex:1; flex:1; background:rgba(255,255,255,0.05); border:1px solid #444; color:#aaa;
+      font-size:9px; font-weight:bold; padding:6px; border-radius:5px; cursor:pointer; text-align:center; }
+    .stab.active { background:rgba(255,107,0,0.2); border-color:#FF6B00; color:#FFD700; }
+    .stab-content { display:none; }
+    .stab-content.active { display:block; }
+    .city-card { background:rgba(255,255,255,0.04); border:1px solid #333; border-radius:8px; padding:10px; margin-bottom:8px; }
+    .city-card.open-city { border-color:#FFD700; }
+    .city-name { font-size:11px; color:#FFD700; font-weight:bold; margin-bottom:4px; }
+    .city-desc { font-size:8px; color:#888; margin-bottom:6px; }
+    .city-btns { display:-webkit-flex; display:flex; gap:5px; }
+    .cbtn { background:#1565C0; border:none; color:#fff; font-size:8px; font-weight:bold;
+      padding:5px 8px; border-radius:5px; cursor:pointer; }
+    .cbtn.green { background:#27ae60; }
+    .cbtn.purple { background:#7B1FA2; }
+    .cheat-big { width:100%; background:#FFD700; border:none; color:#000; font-size:11px; font-weight:bold;
+      padding:12px; border-radius:8px; cursor:pointer; margin-bottom:8px; }
+    .cheat-big.off { background:#333; color:#888; }
+    .cheat-grid { display:-webkit-flex; display:flex; -webkit-flex-wrap:wrap; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+    .cheat-btn { background:rgba(255,255,255,0.06); border:1px solid #444; border-radius:8px;
+      color:#eee; font-size:9px; font-weight:bold; padding:10px 6px; cursor:pointer; width:calc(33% - 4px); text-align:center; line-height:1.5; }
+    .cheat-sec { font-size:9px; color:#FFD700; border-left:3px solid #FF6B00; padding-left:7px; margin:8px 0 5px; font-weight:bold; }
+    #missions { pointer-events:all; position:fixed; top:58px; right:8px; width:160px;
+      background:rgba(0,0,0,0.88); border:1px solid #FFD700; border-radius:8px; padding:8px; }
+    #missions h4 { font-size:8px; color:#FFD700; margin-bottom:6px; text-align:center; font-weight:bold; }
+    .mitem { background:rgba(255,255,255,0.04); border:1px solid rgba(255,215,0,0.2); border-radius:5px; padding:5px; margin-bottom:4px; }
+    .mitem.done { border-color:#39FF14; background:rgba(57,255,20,0.07); }
+    .mname { font-size:7px; color:#ddd; margin-bottom:2px; }
+    .mprog { height:4px; background:#222; border-radius:2px; overflow:hidden; margin-bottom:2px; }
+    .mprogbar { height:100%; background:#FF6B00; border-radius:2px; }
+    .mreward { font-size:6px; color:#FFD700; }
+    .mdone { font-size:7px; color:#39FF14; }
+    #toast { pointer-events:none; position:fixed; top:50%; left:50%; -webkit-transform:translate(-50%,-50%); transform:translate(-50%,-50%);
+      background:rgba(0,0,0,0.95); border:2px solid #FFD700; border-radius:10px; padding:12px 22px;
+      font-size:10px; color:#FFD700; text-align:center; z-index:200; display:none; font-weight:bold; max-width:88vw; }
+    /* TOUCH CONTROLS */
+    #touchui { pointer-events:all; position:fixed; bottom:0; left:0; right:0; height:120px;
+      display:none; -webkit-justify-content:space-between; justify-content:space-between;
+      -webkit-align-items:flex-end; align-items:flex-end; padding:0 10px 10px;
+      background:-webkit-linear-gradient(top,transparent,rgba(0,0,0,0.6)); background:linear-gradient(to bottom,transparent,rgba(0,0,0,0.6)); }
+    #jzone { width:110px; height:110px; display:-webkit-flex; display:flex; -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; }
+    #jbase { width:100px; height:100px; border-radius:50%; background:rgba(255,255,255,0.07);
+      border:2px solid rgba(255,107,0,0.5); position:relative; display:-webkit-flex; display:flex;
+      -webkit-align-items:center; align-items:center; -webkit-justify-content:center; justify-content:center; }
+    #jknob { width:40px; height:40px; border-radius:50%; background:#FF6B00; border:2px solid #FFD700;
+      position:absolute; pointer-events:none; }
+    #tactions { display:-webkit-flex; display:flex; -webkit-flex-direction:column; flex-direction:column; gap:5px; -webkit-flex:1; flex:1; padding-left:8px; }
+    .trow { display:-webkit-flex; display:flex; gap:5px; -webkit-justify-content:flex-end; justify-content:flex-end; }
+    .tbtn2 { width:52px; height:52px; border-radius:12px; border:2px solid rgba(255,255,255,0.15);
+      background:rgba(0,0,0,0.82); font-size:20px; cursor:pointer; display:-webkit-flex; display:flex;
+      -webkit-flex-direction:column; flex-direction:column; -webkit-align-items:center; align-items:center;
+      -webkit-justify-content:center; justify-content:center; color:#fff; }
+    .tbtn2 span { font-size:7px; color:#aaa; margin-top:2px; }
+    .tgold { border-color:#FFD700 !important; }
+    .tgreen { border-color:#39FF14 !important; }
+    .tblue { border-color:#00BFFF !important; }
+    .tred { border-color:#e74c3c !important; }
+    #kblast { position:fixed; inset:0; top:0; left:0; right:0; bottom:0; pointer-events:none; opacity:0; z-index:40; }
+    #tflash { position:fixed; inset:0; top:0; left:0; right:0; bottom:0; background:radial-gradient(circle,#FFD700,#FF6B00,transparent);
+      pointer-events:none; z-index:50; display:none; }
   </style>
 </head>
 <body>
-
-<div id="ui-overlay">
-
-  <!-- TOP BAR -->
-  <div id="top-bar">
-    <div id="day-info">🌅 Day <span id="day-count">1</span> &nbsp;|&nbsp; <span id="time-display">6:00 AM</span></div>
-    <div id="saga-badge">⚔️ <span id="saga-name">Saiyan Saga</span></div>
-    <div id="gold-display">💰 <span id="gold">999,999</span> Zeni</div>
+<canvas id="c"></canvas>
+<div id="ui">
+  <div id="topbar">
+    <div>Day <span id="day">1</span> | <span id="time">6:00 AM</span></div>
+    <div id="saga">Saiyan Saga</div>
+    <div>Zeni: <span id="gold">999999</span></div>
   </div>
-
-  <!-- KI BAR -->
-  <div id="ki-bar-wrap">
-    <div id="ki-label">⚡ KI</div>
-    <div id="ki-bar-bg"><div id="ki-bar"></div></div>
-    <div id="ki-value">100/100</div>
+  <div id="kibar-wrap">
+    <div id="kilabel">KI</div>
+    <div id="kibar-bg"><div id="kibar"></div></div>
+    <div id="kilabel" style="font-size:8px;color:#aef;margin-left:3px"><span id="kival">100/100</span></div>
   </div>
-
-  <!-- POWER LEVEL -->
-  <div id="power-level-wrap">
-    <span id="pl-label">POWER LEVEL:</span>
-    <span id="power-level">9,001</span>
+  <div id="plwrap">PL: <span id="pl">9001</span></div>
+  <div id="seedbar">
+    <div id="seedlabel">SEED:</div>
+    <div id="seedopts"></div>
   </div>
-
-  <!-- SEED SELECTOR -->
-  <div id="seed-selector">
-    <div id="seed-selector-label">🌱 ACTIVE SEED</div>
-    <div id="seed-options"></div>
-  </div>
-
-  <!-- TOOLBAR -->
   <div id="toolbar">
-    <div class="tool-btn active" id="tool-nimbus">☁️<span>Nimbus</span></div>
-    <div class="tool-btn" id="tool-till">⚡<span>Ki-Till</span></div>
-    <div class="tool-btn" id="tool-water">💧<span>Water</span></div>
-    <div class="tool-btn" id="tool-seed">🌱<span>Seed</span></div>
-    <div class="tool-btn" id="tool-harvest">🌾<span>Harvest</span></div>
-    <div class="tool-btn" id="tool-talk">💬<span>Talk</span></div>
-    <div class="tool-btn" id="tool-trade">🚀<span>Trade</span></div>
+    <div class="tbtn active" id="t-nimbus" onclick="setTool('nimbus')">&#9729;<span>Nimbus</span></div>
+    <div class="tbtn" id="t-till" onclick="setTool('till')">&#9889;<span>Till</span></div>
+    <div class="tbtn" id="t-water" onclick="setTool('water')">&#128167;<span>Water</span></div>
+    <div class="tbtn" id="t-seed" onclick="setTool('seed')">&#127807;<span>Seed</span></div>
+    <div class="tbtn" id="t-harvest" onclick="setTool('harvest')">&#127807;<span>Harvest</span></div>
+    <div class="tbtn" id="t-talk" onclick="setTool('talk')">&#128172;<span>Talk</span></div>
+    <div class="tbtn" id="t-trade" onclick="openTrade()">&#128640;<span>Trade</span></div>
+    <div class="tbtn" id="t-cheat" onclick="openCheat()" style="border-color:#FFD700">&#9881;<span>Cheats</span></div>
   </div>
-
-  <!-- INVENTORY BAR -->
-  <div id="inventory-bar">
-    <div class="inv-slot">🫘 <span id="senzu-count">3</span></div>
-    <div class="inv-slot" id="inv-crops-display"></div>
+  <div id="missions">
+    <h4>DAILY MISSIONS</h4>
+    <div id="mlist"></div>
   </div>
-
-  <!-- DAILY MISSIONS PANEL -->
-  <div id="mission-panel">
-    <div id="mission-title">📋 DAILY MISSIONS</div>
-    <div id="mission-list"></div>
-    <div id="mission-timer">⏰ Resets next day</div>
+  <div id="msgbox"></div>
+  <div id="dialogue">
+    <div id="dlg-portrait"></div>
+    <div id="dlg-text"></div>
+    <button id="dlg-ok" onclick="closeDlg()">OK</button>
+    <div style="clear:both"></div>
   </div>
-
-  <!-- MESSAGE BOX -->
-  <div id="message-box" class="hidden"></div>
-
-  <!-- DIALOGUE BOX -->
-  <div id="dialogue-box" class="hidden">
-    <div id="dialogue-portrait"></div>
-    <div id="dialogue-text"></div>
-    <button id="dialogue-close">OK</button>
-  </div>
-
-  <!-- SHOP MODAL -->
-  <div id="shop-modal" class="hidden">
-    <div id="shop-inner">
-      <div id="shop-header">
-        <span id="shop-portrait">💁</span>
-        <div><div id="shop-title">Capsule Corp Shop</div><div id="shop-subtitle">Lyra's Finest Goods!</div></div>
-        <button id="shop-close">✕</button>
+  <!-- SHOP -->
+  <div id="shopmodal">
+    <div class="modal-inner">
+      <div class="modal-title">&#128201; LYRA'S SHOP <button class="mclose" onclick="closeShop()">X</button></div>
+      <div class="stabs">
+        <div class="stab active" onclick="shopTab('seeds',this)">Seeds</div>
+        <div class="stab" onclick="shopTab('items',this)">Items</div>
+        <div class="stab" onclick="shopTab('sell',this)">Sell</div>
       </div>
-      <div id="shop-tabs">
-        <button class="shop-tab active" data-tab="seeds">🌱 Seeds</button>
-        <button class="shop-tab" data-tab="items">🛒 Items</button>
-        <button class="shop-tab" data-tab="sell">💰 Sell</button>
-      </div>
-      <div id="shop-gold-display">💰 Your Zeni: <span id="shop-gold-val">0</span></div>
-      <div id="shop-items-seeds" class="shop-tab-content active"></div>
-      <div id="shop-items-items" class="shop-tab-content"></div>
-      <div id="shop-items-sell" class="shop-tab-content"></div>
-      <div id="shop-feedback"></div>
+      <div style="font-size:9px;color:#FFD700;margin-bottom:8px;font-weight:bold">Zeni: <span id="shopgold">0</span></div>
+      <div id="tab-seeds" class="stab-content active"></div>
+      <div id="tab-items" class="stab-content"></div>
+      <div id="tab-sell" class="stab-content"></div>
+      <div id="shopfb" style="font-size:9px;color:#39FF14;margin-top:6px;text-align:center;min-height:14px"></div>
     </div>
   </div>
-
-  <!-- TRADE MODAL -->
-  <div id="trade-modal" class="hidden">
-    <div id="trade-inner">
-      <div id="trade-header">
-        <span>🚀</span>
-        <div><div id="trade-title">Trade Routes</div><div id="trade-subtitle">Fly to other cities on Nimbus!</div></div>
-        <button id="trade-close">✕</button>
-      </div>
-      <div id="city-list"></div>
-      <div id="trade-inventory">
-        <div id="trade-inv-title">📦 Your Inventory</div>
-        <div id="trade-inv-list"></div>
-      </div>
-      <div id="trade-feedback"></div>
+  <!-- TRADE -->
+  <div id="trademodal">
+    <div class="modal-inner">
+      <div class="modal-title">&#128640; TRADE ROUTES <button class="mclose" onclick="closeTrade()">X</button></div>
+      <div id="citylist"></div>
+      <div style="font-size:9px;color:#FFD700;margin-top:8px;font-weight:bold">Your Harvest:</div>
+      <div id="tradeinv" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px"></div>
+      <div id="tradefb" style="font-size:9px;color:#39FF14;margin-top:6px;text-align:center;min-height:14px"></div>
     </div>
   </div>
-
-  <!-- CHEAT / GOD MODE MODAL (tap ⚙️ button to open) -->
-  <div id="cheat-modal" class="hidden">
-    <div id="cheat-inner">
-      <div id="cheat-header">
-        <span>🐉</span>
-        <div>
-          <div id="cheat-title">CHEAT CODES</div>
-          <div id="cheat-sub">Tap any button to activate instantly</div>
-        </div>
-        <button id="cheat-close">✕</button>
-      </div>
-
-      <!-- God Mode big toggle -->
-      <button class="cheat-big-btn god" id="god-toggle-btn" onclick="CHEATS['god']();updateCheatModal();">
-        ⚡ GOD MODE — TAP TO TOGGLE
-        <span id="god-status-text">Currently: ON</span>
-      </button>
-
-      <!-- Farm Bot -->
-      <div class="cheat-section-label">🤖 FARM BOT</div>
+  <!-- CHEATS -->
+  <div id="cheatmodal">
+    <div class="modal-inner">
+      <div class="modal-title">&#128009; CHEAT CODES <button class="mclose" onclick="closeCheat()">X</button></div>
+      <button class="cheat-big" id="godBtn" onclick="cheat('god')">&#9889; GOD MODE - TAP TO TOGGLE<br><span id="godtxt" style="font-size:9px">Currently: ON</span></button>
+      <div class="cheat-sec">&#129302; FARM BOT</div>
       <div class="cheat-grid">
-        <button class="cheat-btn bot-btn" onclick="CHEATS['botall']();">👥 ALL 3 HELPERS<br>Start Auto-Farm</button>
-        <button class="cheat-btn bot-btn" onclick="CHEATS['bot']();">🤖 BOT<br>Toggle On/Off</button>
+        <div class="cheat-btn" onclick="cheat('botall')">&#128101; ALL 3<br>Auto-Farm</div>
+        <div class="cheat-btn" onclick="cheat('bot')">&#129302; BOT<br>Toggle</div>
       </div>
-
-      <!-- Power cheats -->
-      <div class="cheat-section-label">⚡ POWER</div>
+      <div class="cheat-sec">&#9889; POWER</div>
       <div class="cheat-grid">
-        <button class="cheat-btn" onclick="CHEATS['ssj']();">⚡ SSJ<br>Super Saiyan</button>
-        <button class="cheat-btn" onclick="CHEATS['ssj2']();">⚡⚡ SSJ2<br>Super Saiyan 2</button>
-        <button class="cheat-btn" onclick="CHEATS['power']();">📈 +10K<br>Power Level</button>
+        <div class="cheat-btn" onclick="cheat('ssj')">&#9889; SSJ<br>Transform</div>
+        <div class="cheat-btn" onclick="cheat('ssj2')">&#9889;&#9889; SSJ2</div>
+        <div class="cheat-btn" onclick="cheat('power')">+10K<br>Power</div>
       </div>
-
-      <!-- Farm cheats -->
-      <div class="cheat-section-label">🌾 FARM</div>
+      <div class="cheat-sec">&#127806; FARM</div>
       <div class="cheat-grid">
-        <button class="cheat-btn" onclick="CHEATS['harvest']();">🌾 HARVEST<br>All Crops Ready</button>
-        <button class="cheat-btn" onclick="CHEATS['rain']();">💧 RAIN<br>Water All Crops</button>
-        <button class="cheat-btn" onclick="CHEATS['seeds']();">🌱 SEEDS<br>+50 Every Type</button>
+        <div class="cheat-btn" onclick="cheat('harvest')">&#127806; All<br>Ready</div>
+        <div class="cheat-btn" onclick="cheat('rain')">&#128167; Water<br>All</div>
+        <div class="cheat-btn" onclick="cheat('seeds')">&#127807; +50<br>Seeds</div>
       </div>
-
-      <!-- Zeni cheats -->
-      <div class="cheat-section-label">💰 ZENI & ITEMS</div>
+      <div class="cheat-sec">&#128176; ZENI</div>
       <div class="cheat-grid">
-        <button class="cheat-btn" onclick="CHEATS['rich']();">💰 RICH<br>+100,000 Zeni</button>
-        <button class="cheat-btn" onclick="CHEATS['senzu']();">🫘 SENZU<br>+10 Beans</button>
+        <div class="cheat-btn" onclick="cheat('rich')">&#128176; +100K<br>Zeni</div>
+        <div class="cheat-btn" onclick="cheat('senzu')">+10<br>Senzu</div>
       </div>
-
-      <div id="cheat-feedback"></div>
+      <div id="cheatfb" style="font-size:9px;color:#39FF14;margin-top:8px;text-align:center;min-height:14px"></div>
     </div>
   </div>
-
-  <!-- MISSION TOAST -->
-  <div id="mission-toast" class="hidden"></div>
-
-  <div id="controls-hint">WASD=Move · S=Seed · G=Water · T=Till · H=Harvest · F=Nimbus · E=Talk · R=Trade · Space=Sleep · Type cheat+Enter</div>
-
-  <!-- TOUCH CONTROLS -->
-  <div id="touch-controls">
-
-    <!-- Virtual Joystick -->
-    <div id="joystick-zone">
-      <div id="joystick-base">
-        <div id="joystick-knob"></div>
+  <div id="toast"></div>
+  <!-- TOUCH UI -->
+  <div id="touchui">
+    <div id="jzone"><div id="jbase"><div id="jknob"></div></div></div>
+    <div id="tactions">
+      <div class="trow">
+        <div class="tbtn2 tgold" onclick="setTool('nimbus')">&#9729;<span>Nimbus</span></div>
+        <div class="tbtn2" onclick="nextDay()">&#128564;<span>Sleep</span></div>
+        <div class="tbtn2 tred" onclick="openTrade()">&#128640;<span>Trade</span></div>
+        <div class="tbtn2 tgold" onclick="openCheat()">&#9881;<span>Cheats</span></div>
       </div>
-    </div>
-
-    <!-- Right side action buttons -->
-    <div id="touch-actions">
-      <div id="touch-row-top">
-        <button class="touch-btn touch-nimbus" id="tb-nimbus">☁️<span>Nimbus</span></button>
-        <button class="touch-btn touch-sleep"  id="tb-sleep" >😴<span>Sleep</span></button>
-        <button class="touch-btn touch-trade"  id="tb-trade" >🚀<span>Trade</span></button>
-        <!-- ⚙️ CHEAT BUTTON — always visible on iPad -->
-        <button class="touch-btn touch-cheat"  id="tb-cheat" onclick="openCheatModal()">⚙️<span>Cheats</span></button>
-      </div>
-      <div id="touch-row-bottom">
-        <button class="touch-btn touch-till"    id="tb-till"   >⚡<span>Till</span></button>
-        <button class="touch-btn touch-water"   id="tb-water"  >💧<span>Water</span></button>
-        <button class="touch-btn touch-seed"    id="tb-seed"   >🌱<span>Seed▶</span></button>
-        <button class="touch-btn touch-harvest" id="tb-harvest">🌾<span>Harvest</span></button>
-        <button class="touch-btn touch-talk"    id="tb-talk"   >💬<span>Talk</span></button>
+      <div class="trow">
+        <div class="tbtn2" onclick="setTool('till')">&#9889;<span>Till</span></div>
+        <div class="tbtn2 tblue" onclick="setTool('water')">&#128167;<span>Water</span></div>
+        <div class="tbtn2 tgreen" onclick="touchSeed()">&#127807;<span>Seed</span></div>
+        <div class="tbtn2 tgold" onclick="setTool('harvest')">&#127806;<span>Harvest</span></div>
+        <div class="tbtn2" onclick="talkNPC()">&#128172;<span>Talk</span></div>
       </div>
     </div>
   </div>
-
 </div>
-
-<!-- CHEAT CODE TOAST (centre screen feedback) -->
-<div id="cheat-toast" class="hidden"></div>
-
-<canvas id="gameCanvas"></canvas>
-<div id="ki-blast-overlay"></div>
-<div id="transform-flash" class="hidden"></div>
-
+<div id="kblast"></div>
+<div id="tflash"></div>
 <script src="game.js"></script>
 </body>
 </html>
