@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Dragon Farm Z"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <title>Dragon Farm Z</title>
+  <link rel="stylesheet" href="style.css"/>
+  <style>
+    /* Critical fallback styles inline so they always load */
+    *{-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;}
+    body{margin:0;padding:0;background:#000;overflow:hidden;}
+    canvas{display:block;}
+    /* Prevent iOS bounce scroll */
+    html,body{position:fixed;width:100%;height:100%;overflow:hidden;}
+  </style>
+</head>
+<body>
+
+<div id="ui-overlay">
+
+  <!-- TOP BAR -->
+  <div id="top-bar">
+    <div id="day-info">🌅 Day <span id="day-count">1</span> &nbsp;|&nbsp; <span id="time-display">6:00 AM</span></div>
+    <div id="saga-badge">⚔️ <span id="saga-name">Saiyan Saga</span></div>
+    <div id="gold-display">💰 <span id="gold">999,999</span> Zeni</div>
+  </div>
+
+  <!-- KI BAR -->
+  <div id="ki-bar-wrap">
+    <div id="ki-label">⚡ KI</div>
+    <div id="ki-bar-bg"><div id="ki-bar"></div></div>
+    <div id="ki-value">100/100</div>
+  </div>
+
+  <!-- POWER LEVEL -->
+  <div id="power-level-wrap">
+    <span id="pl-label">POWER LEVEL:</span>
+    <span id="power-level">9,001</span>
+  </div>
+
+  <!-- SEED SELECTOR -->
+  <div id="seed-selector">
+    <div id="seed-selector-label">🌱 ACTIVE SEED</div>
+    <div id="seed-options"></div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div id="toolbar">
+    <div class="tool-btn active" id="tool-nimbus">☁️<span>Nimbus</span></div>
+    <div class="tool-btn" id="tool-till">⚡<span>Ki-Till</span></div>
+    <div class="tool-btn" id="tool-water">💧<span>Water</span></div>
+    <div class="tool-btn" id="tool-seed">🌱<span>Seed</span></div>
+    <div class="tool-btn" id="tool-harvest">🌾<span>Harvest</span></div>
+    <div class="tool-btn" id="tool-talk">💬<span>Talk</span></div>
+    <div class="tool-btn" id="tool-trade">🚀<span>Trade</span></div>
+  </div>
+
+  <!-- INVENTORY BAR -->
+  <div id="inventory-bar">
+    <div class="inv-slot">🫘 <span id="senzu-count">3</span></div>
+    <div class="inv-slot" id="inv-crops-display"></div>
+  </div>
+
+  <!-- DAILY MISSIONS PANEL -->
+  <div id="mission-panel">
+    <div id="mission-title">📋 DAILY MISSIONS</div>
+    <div id="mission-list"></div>
+    <div id="mission-timer">⏰ Resets next day</div>
+  </div>
+
+  <!-- MESSAGE BOX -->
+  <div id="message-box" class="hidden"></div>
+
+  <!-- DIALOGUE BOX -->
+  <div id="dialogue-box" class="hidden">
+    <div id="dialogue-portrait"></div>
+    <div id="dialogue-text"></div>
+    <button id="dialogue-close">OK</button>
+  </div>
+
+  <!-- SHOP MODAL -->
+  <div id="shop-modal" class="hidden">
+    <div id="shop-inner">
+      <div id="shop-header">
+        <span id="shop-portrait">💁</span>
+        <div><div id="shop-title">Capsule Corp Shop</div><div id="shop-subtitle">Lyra's Finest Goods!</div></div>
+        <button id="shop-close">✕</button>
+      </div>
+      <div id="shop-tabs">
+        <button class="shop-tab active" data-tab="seeds">🌱 Seeds</button>
+        <button class="shop-tab" data-tab="items">🛒 Items</button>
+        <button class="shop-tab" data-tab="sell">💰 Sell</button>
+      </div>
+      <div id="shop-gold-display">💰 Your Zeni: <span id="shop-gold-val">0</span></div>
+      <div id="shop-items-seeds" class="shop-tab-content active"></div>
+      <div id="shop-items-items" class="shop-tab-content"></div>
+      <div id="shop-items-sell" class="shop-tab-content"></div>
+      <div id="shop-feedback"></div>
+    </div>
+  </div>
+
+  <!-- TRADE MODAL -->
+  <div id="trade-modal" class="hidden">
+    <div id="trade-inner">
+      <div id="trade-header">
+        <span>🚀</span>
+        <div><div id="trade-title">Trade Routes</div><div id="trade-subtitle">Fly to other cities on Nimbus!</div></div>
+        <button id="trade-close">✕</button>
+      </div>
+      <div id="city-list"></div>
+      <div id="trade-inventory">
+        <div id="trade-inv-title">📦 Your Inventory</div>
+        <div id="trade-inv-list"></div>
+      </div>
+      <div id="trade-feedback"></div>
+    </div>
+  </div>
+
+  <!-- CHEAT / GOD MODE MODAL (tap ⚙️ button to open) -->
+  <div id="cheat-modal" class="hidden">
+    <div id="cheat-inner">
+      <div id="cheat-header">
+        <span>🐉</span>
+        <div>
+          <div id="cheat-title">CHEAT CODES</div>
+          <div id="cheat-sub">Tap any button to activate instantly</div>
+        </div>
+        <button id="cheat-close">✕</button>
+      </div>
+
+      <!-- God Mode big toggle -->
+      <button class="cheat-big-btn god" id="god-toggle-btn" onclick="CHEATS['god']();updateCheatModal();">
+        ⚡ GOD MODE — TAP TO TOGGLE
+        <span id="god-status-text">Currently: ON</span>
+      </button>
+
+      <!-- Farm Bot -->
+      <div class="cheat-section-label">🤖 FARM BOT</div>
+      <div class="cheat-grid">
+        <button class="cheat-btn bot-btn" onclick="CHEATS['botall']();">👥 ALL 3 HELPERS<br>Start Auto-Farm</button>
+        <button class="cheat-btn bot-btn" onclick="CHEATS['bot']();">🤖 BOT<br>Toggle On/Off</button>
+      </div>
+
+      <!-- Power cheats -->
+      <div class="cheat-section-label">⚡ POWER</div>
+      <div class="cheat-grid">
+        <button class="cheat-btn" onclick="CHEATS['ssj']();">⚡ SSJ<br>Super Saiyan</button>
+        <button class="cheat-btn" onclick="CHEATS['ssj2']();">⚡⚡ SSJ2<br>Super Saiyan 2</button>
+        <button class="cheat-btn" onclick="CHEATS['power']();">📈 +10K<br>Power Level</button>
+      </div>
+
+      <!-- Farm cheats -->
+      <div class="cheat-section-label">🌾 FARM</div>
+      <div class="cheat-grid">
+        <button class="cheat-btn" onclick="CHEATS['harvest']();">🌾 HARVEST<br>All Crops Ready</button>
+        <button class="cheat-btn" onclick="CHEATS['rain']();">💧 RAIN<br>Water All Crops</button>
+        <button class="cheat-btn" onclick="CHEATS['seeds']();">🌱 SEEDS<br>+50 Every Type</button>
+      </div>
+
+      <!-- Zeni cheats -->
+      <div class="cheat-section-label">💰 ZENI & ITEMS</div>
+      <div class="cheat-grid">
+        <button class="cheat-btn" onclick="CHEATS['rich']();">💰 RICH<br>+100,000 Zeni</button>
+        <button class="cheat-btn" onclick="CHEATS['senzu']();">🫘 SENZU<br>+10 Beans</button>
+      </div>
+
+      <div id="cheat-feedback"></div>
+    </div>
+  </div>
+
+  <!-- MISSION TOAST -->
+  <div id="mission-toast" class="hidden"></div>
+
+  <div id="controls-hint">WASD=Move · S=Seed · G=Water · T=Till · H=Harvest · F=Nimbus · E=Talk · R=Trade · Space=Sleep · Type cheat+Enter</div>
+
+  <!-- TOUCH CONTROLS -->
+  <div id="touch-controls">
+
+    <!-- Virtual Joystick -->
+    <div id="joystick-zone">
+      <div id="joystick-base">
+        <div id="joystick-knob"></div>
+      </div>
+    </div>
+
+    <!-- Right side action buttons -->
+    <div id="touch-actions">
+      <div id="touch-row-top">
+        <button class="touch-btn touch-nimbus" id="tb-nimbus">☁️<span>Nimbus</span></button>
+        <button class="touch-btn touch-sleep"  id="tb-sleep" >😴<span>Sleep</span></button>
+        <button class="touch-btn touch-trade"  id="tb-trade" >🚀<span>Trade</span></button>
+        <!-- ⚙️ CHEAT BUTTON — always visible on iPad -->
+        <button class="touch-btn touch-cheat"  id="tb-cheat" onclick="openCheatModal()">⚙️<span>Cheats</span></button>
+      </div>
+      <div id="touch-row-bottom">
+        <button class="touch-btn touch-till"    id="tb-till"   >⚡<span>Till</span></button>
+        <button class="touch-btn touch-water"   id="tb-water"  >💧<span>Water</span></button>
+        <button class="touch-btn touch-seed"    id="tb-seed"   >🌱<span>Seed▶</span></button>
+        <button class="touch-btn touch-harvest" id="tb-harvest">🌾<span>Harvest</span></button>
+        <button class="touch-btn touch-talk"    id="tb-talk"   >💬<span>Talk</span></button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CHEAT CODE TOAST (centre screen feedback) -->
+<div id="cheat-toast" class="hidden"></div>
+
+<canvas id="gameCanvas"></canvas>
+<div id="ki-blast-overlay"></div>
+<div id="transform-flash" class="hidden"></div>
+
+<script src="game.js"></script>
+</body>
+</html>

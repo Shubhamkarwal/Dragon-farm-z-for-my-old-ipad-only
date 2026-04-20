@@ -1,0 +1,616 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --orange:#FF6B00;--gold:#FFD700;--blue:#00BFFF;--dark:#0a0a1a;
+  --panel:rgba(10,10,30,0.92);--green:#39FF14;--red:#FF3333;
+}
+body{background:#000;overflow:hidden;font-family:'Press Start 2P',monospace;color:#fff;cursor:crosshair;}
+#gameCanvas{display:block;image-rendering:pixelated;}
+#ui-overlay{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:10;}
+
+
+/* ── OLD SAFARI / iOS COMPATIBILITY ── */
+* {
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-text-size-adjust: 100%;
+}
+#gameCanvas {
+  display: block;
+  /* Prevent grey flash on old iOS */
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+/* Fix backdrop-filter not supported on old Safari */
+#shop-modal, #trade-modal, #cheat-modal {
+  background: rgba(0,0,0,0.88) !important;
+}
+/* Fix animation prefix */
+@-webkit-keyframes kiFlow {0%{background-position:0%}100%{background-position:200%}}
+@-webkit-keyframes pulse {0%,100%{opacity:1}50%{opacity:0.7}}
+@-webkit-keyframes msgPop {from{opacity:0}to{opacity:1}}
+@-webkit-keyframes cheatPop {from{transform:translate(-50%,-50%) scale(0.7);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+
+/* TOP BAR */
+#top-bar{pointer-events:all;display:flex;justify-content:space-between;align-items:center;
+  background:var(--panel);border-bottom:2px solid var(--orange);padding:6px 16px;font-size:9px;color:var(--gold);
+  text-shadow:0 0 8px var(--orange);}
+#saga-badge{background:linear-gradient(135deg,#FF6B00,#FFD700);color:#000;padding:3px 10px;border-radius:4px;font-size:8px;}
+
+/* KI BAR */
+#ki-bar-wrap{position:absolute;top:38px;left:10px;display:flex;align-items:center;gap:6px;pointer-events:none;}
+#ki-label{font-size:7px;color:var(--blue);text-shadow:0 0 10px #00BFFF;}
+#ki-bar-bg{width:120px;height:10px;background:rgba(0,0,0,0.6);border:1px solid var(--blue);border-radius:5px;overflow:hidden;}
+#ki-bar{height:100%;width:100%;background:linear-gradient(90deg,#00BFFF,#7FFFD4,#00BFFF);background-size:200% 100%;
+  animation:kiFlow 1.5s linear infinite;transition:width 0.3s;border-radius:5px;}
+@keyframes kiFlow{0%{background-position:0%}100%{background-position:200%}}
+#ki-value{font-size:6px;color:#aef;}
+
+/* POWER LEVEL */
+#power-level-wrap{position:absolute;top:38px;right:10px;font-size:7px;color:var(--gold);pointer-events:none;animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}
+#pl-label{color:#aaa;margin-right:4px;}
+#power-level{color:var(--orange);font-size:10px;}
+
+/* SEED SELECTOR */
+#seed-selector{pointer-events:all;position:absolute;top:34px;left:50%;transform:translateX(-50%);
+  background:var(--panel);border:1px solid var(--gold);border-radius:8px;padding:6px 10px;display:flex;flex-direction:column;align-items:center;gap:4px;}
+#seed-selector-label{font-size:6px;color:var(--gold);}
+#seed-options{display:flex;gap:5px;}
+.seed-opt{font-size:18px;cursor:pointer;padding:4px;border-radius:6px;border:2px solid transparent;transition:all 0.15s;position:relative;}
+.seed-opt:hover,.seed-opt.active{border-color:var(--orange);background:rgba(255,107,0,0.2);}
+.seed-opt .seed-count{position:absolute;bottom:-2px;right:-2px;background:#111;border-radius:3px;font-size:5px;color:var(--gold);padding:1px 2px;}
+
+/* TOOLBAR */
+#toolbar{pointer-events:all;position:absolute;bottom:54px;left:50%;transform:translateX(-50%);display:flex;gap:5px;}
+.tool-btn{display:flex;flex-direction:column;align-items:center;gap:3px;background:var(--panel);
+  border:2px solid #444;border-radius:8px;padding:7px 5px 4px;font-size:17px;cursor:pointer;transition:all 0.15s;min-width:50px;}
+.tool-btn span{font-size:5px;color:#aaa;white-space:nowrap;}
+.tool-btn:hover,.tool-btn.active{border-color:var(--orange);box-shadow:0 0 12px var(--orange),inset 0 0 8px rgba(255,107,0,0.2);transform:translateY(-2px);}
+.tool-btn.active span{color:var(--gold);}
+
+/* INVENTORY */
+#inventory-bar{pointer-events:all;position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+.inv-slot{background:var(--panel);border:1px solid #555;border-radius:6px;padding:4px 8px;font-size:11px;display:flex;align-items:center;gap:3px;color:#ddd;}
+.inv-slot span{font-size:7px;color:var(--gold);}
+.inv-crop-slot{background:var(--panel);border:1px solid #555;border-radius:6px;padding:3px 7px;font-size:10px;display:flex;align-items:center;gap:3px;}
+.inv-crop-slot span{font-size:6px;color:var(--gold);}
+
+/* DAILY MISSIONS */
+#mission-panel{pointer-events:all;position:absolute;top:58px;right:226px;width:192px;
+  background:var(--panel);border:1px solid var(--gold);border-radius:10px;padding:10px;}
+#mission-title{font-size:7px;color:var(--gold);margin-bottom:8px;text-align:center;text-shadow:0 0 8px var(--gold);}
+#mission-list{display:flex;flex-direction:column;gap:5px;}
+.mission-item{background:rgba(255,255,255,0.04);border:1px solid rgba(255,215,0,0.2);border-radius:6px;padding:6px 8px;}
+.mission-item.done{border-color:var(--green);background:rgba(57,255,20,0.08);}
+.mission-name{font-size:6px;color:#ddd;margin-bottom:3px;}
+.mission-progress{height:5px;background:#222;border-radius:3px;overflow:hidden;}
+.mission-bar{height:100%;background:linear-gradient(90deg,var(--orange),var(--gold));border-radius:3px;transition:width 0.4s;}
+.mission-reward{font-size:5px;color:var(--gold);margin-top:3px;}
+.mission-done-text{font-size:6px;color:var(--green);}
+#mission-timer{font-size:5px;color:#666;text-align:center;margin-top:6px;}
+
+/* MESSAGE — sits above toolbar, never overlaps top UI */
+#message-box{
+  pointer-events:none;
+  position:fixed;
+  bottom:135px;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(6,6,20,0.95);
+  border:2px solid var(--orange);
+  border-radius:10px;
+  padding:10px 22px;
+  font-size:8px;
+  color:var(--gold);
+  text-align:center;
+  text-shadow:0 0 8px var(--orange);
+  z-index:25;
+  white-space:nowrap;
+  max-width:88vw;
+  box-shadow:0 0 18px rgba(255,107,0,0.35);
+  animation:msgPop 0.18s ease;
+}
+@keyframes msgPop{from{opacity:0;transform:translateX(-50%) translateY(8px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+
+/* DIALOGUE */
+#dialogue-box{pointer-events:all;position:absolute;bottom:120px;left:50%;transform:translateX(-50%);
+  width:500px;background:var(--panel);border:2px solid var(--gold);border-radius:12px;padding:16px;
+  display:flex;gap:14px;align-items:flex-start;z-index:30;}
+#dialogue-portrait{font-size:36px;flex-shrink:0;width:48px;text-align:center;}
+#dialogue-text{font-size:8px;line-height:1.8;color:#eee;flex:1;}
+#dialogue-close{pointer-events:all;background:var(--orange);border:none;color:#000;
+  font-family:'Press Start 2P',monospace;font-size:7px;padding:5px 10px;border-radius:4px;cursor:pointer;flex-shrink:0;align-self:flex-end;}
+#dialogue-close:hover{background:var(--gold);}
+
+/* SHOP */
+#shop-modal,#trade-modal{pointer-events:all;position:fixed;inset:0;background:rgba(0,0,0,0.78);
+  display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(4px);}
+#shop-inner,#trade-inner{background:linear-gradient(160deg,#0a0a2a,#10103a);border:2px solid var(--gold);
+  border-radius:16px;width:500px;max-width:96vw;max-height:90vh;overflow-y:auto;padding:20px;
+  box-shadow:0 0 40px rgba(255,215,0,0.3);}
+#shop-header,#trade-header{display:flex;align-items:center;gap:14px;margin-bottom:12px;
+  border-bottom:1px solid rgba(255,215,0,0.3);padding-bottom:12px;}
+#shop-header span,#trade-header span{font-size:40px;flex-shrink:0;}
+#shop-title,#trade-title{font-size:11px;color:var(--gold);text-shadow:0 0 10px var(--orange);margin-bottom:4px;}
+#shop-subtitle,#trade-subtitle{font-size:7px;color:#aaa;}
+#shop-close,#trade-close{margin-left:auto;background:transparent;border:1px solid #555;color:#aaa;
+  font-size:14px;cursor:pointer;border-radius:6px;padding:4px 8px;font-family:'Press Start 2P',monospace;transition:all 0.15s;}
+#shop-close:hover,#trade-close:hover{border-color:var(--red);color:var(--red);}
+
+/* SHOP TABS */
+#shop-tabs{display:flex;gap:6px;margin-bottom:10px;}
+.shop-tab{background:rgba(255,255,255,0.05);border:1px solid #444;color:#aaa;
+  font-family:'Press Start 2P',monospace;font-size:7px;padding:6px 10px;border-radius:6px;cursor:pointer;transition:all 0.15s;flex:1;}
+.shop-tab.active{background:rgba(255,107,0,0.2);border-color:var(--orange);color:var(--gold);}
+.shop-tab-content{display:none;flex-direction:column;gap:6px;}
+.shop-tab-content.active{display:flex;}
+
+#shop-gold-display{font-size:8px;color:var(--gold);margin-bottom:10px;text-align:center;
+  background:rgba(255,215,0,0.08);border-radius:6px;padding:6px;border:1px solid rgba(255,215,0,0.2);}
+.shop-item{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:9px 11px;transition:all 0.15s;}
+.shop-item:hover{border-color:var(--gold);background:rgba(255,215,0,0.07);}
+.shop-item-icon{font-size:22px;flex-shrink:0;}
+.shop-item-info{flex:1;}
+.shop-item-name{font-size:7px;color:#eee;margin-bottom:3px;}
+.shop-item-desc{font-size:5px;color:#888;}
+.shop-item-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+.shop-item-cost{font-size:7px;color:var(--gold);}
+.shop-buy-btn{background:linear-gradient(135deg,var(--orange),#FF8C00);border:none;color:#000;
+  font-family:'Press Start 2P',monospace;font-size:6px;padding:5px 9px;border-radius:5px;cursor:pointer;transition:all 0.15s;white-space:nowrap;}
+.shop-buy-btn:hover{transform:scale(1.05);box-shadow:0 0 10px var(--orange);}
+.shop-buy-btn.sell{background:linear-gradient(135deg,#39FF14,#20cc00);}
+.shop-buy-btn:disabled{background:#333;color:#666;cursor:not-allowed;transform:none;box-shadow:none;}
+#shop-feedback,#trade-feedback{margin-top:10px;font-size:7px;text-align:center;min-height:16px;color:var(--green);}
+
+/* TRADE / CITY */
+#city-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+.city-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:12px;}
+.city-card.locked{opacity:0.5;}
+.city-card.unlocked{border-color:var(--gold);}
+.city-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.city-icon{font-size:28px;}
+.city-name{font-size:8px;color:var(--gold);}
+.city-status{font-size:6px;color:#888;margin-top:2px;}
+.city-prices{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px;}
+.city-price-tag{background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);border-radius:4px;padding:3px 7px;font-size:6px;color:#eee;}
+.city-price-tag .mult{color:var(--green);font-size:7px;}
+.city-actions{display:flex;gap:6px;}
+.city-btn{background:linear-gradient(135deg,#1565C0,#0d47a1);border:none;color:#fff;
+  font-family:'Press Start 2P',monospace;font-size:6px;padding:5px 10px;border-radius:5px;cursor:pointer;transition:all 0.15s;}
+.city-btn:hover{transform:scale(1.04);box-shadow:0 0 10px #1565C0;}
+.city-btn.expand{background:linear-gradient(135deg,#7B1FA2,#4A148C);}
+.city-btn:disabled{background:#333;color:#555;cursor:not-allowed;transform:none;box-shadow:none;}
+#trade-inventory{border-top:1px solid rgba(255,215,0,0.2);padding-top:10px;}
+#trade-inv-title{font-size:7px;color:var(--gold);margin-bottom:8px;}
+#trade-inv-list{display:flex;flex-wrap:wrap;gap:6px;}
+.trade-crop-slot{background:rgba(255,255,255,0.06);border:1px solid #444;border-radius:8px;padding:6px 10px;
+  display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:all 0.15s;min-width:60px;}
+.trade-crop-slot:hover{border-color:var(--orange);}
+.trade-crop-slot .tcs-icon{font-size:20px;}
+.trade-crop-slot .tcs-name{font-size:5px;color:#aaa;}
+.trade-crop-slot .tcs-qty{font-size:7px;color:var(--gold);}
+
+/* MISSION TOAST */
+#mission-toast{pointer-events:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  background:linear-gradient(135deg,rgba(57,255,20,0.95),rgba(0,200,0,0.95));border:3px solid #fff;
+  border-radius:16px;padding:20px 30px;font-size:12px;color:#000;text-align:center;z-index:200;
+  animation:toastPop 0.3s ease;}
+@keyframes toastPop{from{transform:translate(-50%,-50%) scale(0.5);opacity:0}to{transform:translate(-50%,-50%) scale(1);opacity:1}}
+
+/* MISC */
+#controls-hint{position:absolute;bottom:90px;left:50%;transform:translateX(-50%);font-size:5px;color:rgba(255,255,255,0.25);pointer-events:none;white-space:nowrap;}
+#ki-blast-overlay{position:fixed;inset:0;pointer-events:none;z-index:50;opacity:0;}
+#ki-blast-overlay.blast{animation:blastFade 0.5s forwards;}
+@keyframes blastFade{0%{opacity:1}100%{opacity:0}}
+#transform-flash{position:fixed;inset:0;background:radial-gradient(circle,#FFD700,#FF6B00,transparent);pointer-events:none;z-index:60;animation:flashOut 1s forwards;}
+@keyframes flashOut{0%{opacity:1}100%{opacity:0}}
+.hidden{display:none!important;}
+
+/* ═══════════════════════════════════════════════
+   TOUCH CONTROLS
+═══════════════════════════════════════════════ */
+#touch-controls {
+  pointer-events: all;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 220px;
+  display: none; /* shown only on touch devices via JS */
+  justify-content: space-between;
+  align-items: flex-end;
+  padding: 0 16px 16px;
+  z-index: 40;
+  background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ── JOYSTICK ── */
+#joystick-zone {
+  width: 140px;
+  height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+#joystick-base {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+  border: 2px solid rgba(255,107,0,0.5);
+  box-shadow: 0 0 20px rgba(255,107,0,0.2);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+}
+
+#joystick-knob {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #FF8C30, #FF6B00);
+  border: 2px solid rgba(255,215,0,0.6);
+  box-shadow: 0 0 12px rgba(255,107,0,0.7), 0 2px 8px rgba(0,0,0,0.5);
+  position: absolute;
+  pointer-events: none;
+  transition: transform 0.05s;
+}
+
+/* ── ACTION BUTTONS CONTAINER ── */
+#touch-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;
+  flex: 1;
+  padding-left: 12px;
+}
+
+#touch-row-top,
+#touch-row-bottom {
+  display: flex;
+  gap: 7px;
+  justify-content: flex-end;
+}
+
+/* ── INDIVIDUAL TOUCH BUTTONS ── */
+.touch-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  border: 2px solid rgba(255,255,255,0.15);
+  background: rgba(10,10,30,0.82);
+  font-size: 22px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: transform 0.08s, box-shadow 0.08s;
+  backdrop-filter: blur(6px);
+}
+
+.touch-btn span {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 5px;
+  color: #aaa;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.touch-btn:active {
+  transform: scale(0.88);
+}
+
+/* Colour-coded buttons */
+.touch-nimbus  { border-color: #FFD700; box-shadow: 0 0 10px rgba(255,215,0,0.3); }
+.touch-nimbus:active  { box-shadow: 0 0 20px #FFD700; }
+
+.touch-till    { border-color: #FF6B00; box-shadow: 0 0 10px rgba(255,107,0,0.3); }
+.touch-till:active    { box-shadow: 0 0 20px #FF6B00; }
+
+.touch-water   { border-color: #00BFFF; box-shadow: 0 0 10px rgba(0,191,255,0.3); }
+.touch-water:active   { box-shadow: 0 0 20px #00BFFF; }
+
+.touch-seed    { border-color: #39FF14; box-shadow: 0 0 10px rgba(57,255,20,0.3); }
+.touch-seed:active    { box-shadow: 0 0 20px #39FF14; }
+
+.touch-harvest { border-color: #FFD700; box-shadow: 0 0 10px rgba(255,215,0,0.3); }
+.touch-harvest:active { box-shadow: 0 0 20px #FFD700; }
+
+.touch-talk    { border-color: #fff; box-shadow: 0 0 8px rgba(255,255,255,0.2); }
+.touch-talk:active    { box-shadow: 0 0 16px #fff; }
+
+.touch-sleep   { border-color: #9b59b6; box-shadow: 0 0 10px rgba(155,89,182,0.3); }
+.touch-sleep:active   { box-shadow: 0 0 20px #9b59b6; }
+
+.touch-trade   { border-color: #e74c3c; box-shadow: 0 0 10px rgba(231,76,60,0.3); }
+.touch-trade:active   { box-shadow: 0 0 20px #e74c3c; }
+
+.touch-senzu   { border-color: #39FF14; box-shadow: 0 0 10px rgba(57,255,20,0.3); }
+.touch-senzu:active   { box-shadow: 0 0 20px #39FF14; }
+
+/* Active tool highlight on touch buttons */
+.touch-btn.tool-active {
+  border-color: #FF6B00 !important;
+  box-shadow: 0 0 18px #FF6B00 !important;
+  background: rgba(255,107,0,0.18) !important;
+}
+.touch-btn.tool-active span { color: #FFD700 !important; }
+
+/* Hide keyboard hint on touch */
+@media (hover: none) and (pointer: coarse) {
+  #controls-hint { display: none; }
+}
+
+/* ═══════════════════════════════════════════════
+   SETTINGS PANEL — God Mode + Farm Bot
+═══════════════════════════════════════════════ */
+#settings-panel {
+  pointer-events: all;
+  position: fixed;
+  right: 10px;
+  top: 58px;
+  width: 210px;
+  background: rgba(6,6,20,0.96);
+  border: 2px solid rgba(255,215,0,0.6);
+  border-radius: 12px;
+  padding: 10px;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  box-shadow: 0 0 20px rgba(255,215,0,0.2);
+}
+#settings-panel.collapsed #farmbot-section,
+#settings-panel.collapsed #settings-title { display: none; }
+#settings-toggle {
+  position: absolute;
+  top: -1px; right: -1px;
+  background: rgba(255,215,0,0.15);
+  border: 1px solid rgba(255,215,0,0.4);
+  border-radius: 0 10px 0 8px;
+  color: var(--gold);
+  font-size: 10px;
+  padding: 2px 7px;
+  cursor: pointer;
+  font-family: 'Press Start 2P', monospace;
+  line-height: 1;
+}
+
+#settings-title {
+  font-size: 7px;
+  color: var(--gold);
+  text-align: center;
+  text-shadow: 0 0 8px var(--gold);
+  border-bottom: 1px solid rgba(255,215,0,0.2);
+  padding-bottom: 6px;
+  margin-bottom: 2px;
+}
+
+/* God Mode Button */
+#god-mode-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #FFD700, #FF6B00);
+  border: none;
+  color: #000;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  padding: 7px 6px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.5px;
+}
+#god-mode-btn:hover { transform: scale(1.03); box-shadow: 0 0 12px var(--gold); }
+
+/* Farm Bot Section */
+#farmbot-header {
+  font-size: 7px;
+  color: #39FF14;
+  text-align: center;
+  text-shadow: 0 0 8px #39FF14;
+}
+#farmbot-helper-label { font-size: 5px; color: #888; }
+#farmbot-helpers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.bot-helper-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid #444;
+  color: #aaa;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 5px;
+  padding: 5px 3px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.bot-helper-btn:hover { border-color: #39FF14; color: #fff; }
+.bot-helper-btn.active {
+  border-color: #39FF14;
+  background: rgba(57,255,20,0.15);
+  color: #39FF14;
+  box-shadow: 0 0 8px rgba(57,255,20,0.3);
+}
+
+#farmbot-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #1565C0, #0d47a1);
+  border: none;
+  color: #fff;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  padding: 7px 6px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+#farmbot-btn:hover { transform: scale(1.03); box-shadow: 0 0 12px #1565C0; }
+
+#bot-status {
+  font-size: 6px;
+  color: #39FF14;
+  text-align: center;
+}
+#bot-phase {
+  font-size: 5px;
+  color: var(--gold);
+  text-align: center;
+}
+#bot-stats {
+  font-size: 5px;
+  color: #888;
+  text-align: center;
+  line-height: 1.6;
+  word-spacing: 2px;
+}
+#bot-log {
+  max-height: 80px;
+  overflow-y: auto;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding-top: 5px;
+  margin-top: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+#bot-log::-webkit-scrollbar { width: 3px; }
+#bot-log::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+.bot-log-line {
+  font-size: 5px;
+  color: #aaa;
+  line-height: 1.4;
+  padding: 1px 2px;
+  border-left: 2px solid rgba(57,255,20,0.3);
+  padding-left: 4px;
+}
+
+/* CHEAT CODE TOAST */
+#cheat-toast {
+  pointer-events: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.92);
+  border: 2px solid #FFD700;
+  border-radius: 12px;
+  padding: 14px 28px;
+  font-size: 9px;
+  color: #FFD700;
+  text-align: center;
+  z-index: 999;
+  white-space: nowrap;
+  max-width: 90vw;
+  white-space: normal;
+  text-align: center;
+  animation: cheatPop 0.2s ease;
+  letter-spacing: 1px;
+}
+@keyframes cheatPop {
+  from { transform: translate(-50%,-50%) scale(0.7); opacity:0; }
+  to   { transform: translate(-50%,-50%) scale(1);   opacity:1; }
+}
+
+/* ═══════════════════════════════════════
+   CHEAT MODAL
+═══════════════════════════════════════ */
+#cheat-modal {
+  pointer-events: all;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  backdrop-filter: blur(4px);
+}
+#cheat-inner {
+  background: linear-gradient(160deg,#0a0a22,#0f0f30);
+  border: 2px solid var(--gold);
+  border-radius: 16px;
+  width: 480px;
+  max-width: 96vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 18px;
+  box-shadow: 0 0 50px rgba(255,215,0,0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+#cheat-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid rgba(255,215,0,0.25);
+  padding-bottom: 12px;
+}
+#cheat-header span { font-size: 36px; flex-shrink: 0; }
+#cheat-title { font-size: 12px; color: var(--gold); text-shadow: 0 0 10px var(--orange); }
+#cheat-sub   { font-size: 6px; color: #888; margin-top: 3px; }
+#cheat-close {
+  margin-left: auto; background: transparent; border: 1px solid #555;
+  color: #aaa; font-size: 14px; cursor: pointer; border-radius: 6px;
+  padding: 4px 9px; font-family: 'Press Start 2P', monospace;
+}
+#cheat-close:hover { border-color: var(--red); color: var(--red); }
+
+/* God Mode big button */
+.cheat-big-btn {
+  width: 100%; padding: 14px 10px; border-radius: 10px; border: 2px solid var(--gold);
+  font-family: 'Press Start 2P', monospace; font-size: 9px; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  transition: all 0.2s; line-height: 1.4;
+}
+.cheat-big-btn.god { background: linear-gradient(135deg,#FFD700,#FF6B00); color: #000; }
+.cheat-big-btn.god.off { background: linear-gradient(135deg,#333,#222); color: #888; border-color: #555; }
+.cheat-big-btn:hover { transform: scale(1.02); }
+.cheat-big-btn span { font-size: 7px; opacity: 0.8; }
+
+/* Section labels */
+.cheat-section-label {
+  font-size: 7px; color: var(--gold); opacity: 0.7;
+  border-left: 3px solid var(--orange); padding-left: 8px;
+}
+
+/* Cheat grid */
+.cheat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+.cheat-btn {
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 10px; padding: 10px 6px; color: #eee; cursor: pointer;
+  font-family: 'Press Start 2P', monospace; font-size: 6px; line-height: 1.7;
+  text-align: center; transition: all 0.15s;
+}
+.cheat-btn:hover, .cheat-btn:active { border-color: var(--orange); background: rgba(255,107,0,0.15); transform: scale(1.04); box-shadow: 0 0 10px rgba(255,107,0,0.3); }
+.bot-btn { border-color: rgba(57,255,20,0.4); }
+.bot-btn:hover { border-color: #39FF14; background: rgba(57,255,20,0.12); box-shadow: 0 0 10px rgba(57,255,20,0.3); }
+
+#cheat-feedback { font-size: 7px; color: var(--green); text-align: center; min-height: 14px; }
+
+/* Gear/Cheat touch button */
+.touch-cheat { border-color: var(--gold) !important; box-shadow: 0 0 10px rgba(255,215,0,0.3) !important; }
+.touch-cheat:active { box-shadow: 0 0 22px var(--gold) !important; }
